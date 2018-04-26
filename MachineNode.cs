@@ -13,59 +13,62 @@ namespace Scheduler {
         private ArrayList machines;
         private int year;
         private int quarter;
+        private Preferences preferences;
 
-        public MachineNode(ArrayList m, int year, int quarter) {
+        public MachineNode(ArrayList m, int year, int quarter, Preferences p) {
             this.year = year;
             this.quarter = quarter;
             machines = m;
             creditsScheduled = 0;
             majorCreditsScheduled = 0;
+            preferences = p;
         }
 
-        public int getCredits() {
+        public int GetCreditsScheduled() {
             return creditsScheduled;
         }
 
-        public int getMajorCreditsScheduled() {
+        public int GetMajorCreditsScheduled() {
             return majorCreditsScheduled;
         }
 
-        public void addMachine(int year, int quarter, ArrayList dateTime, ArrayList jobs) {
+        public void AddMachine(int year, int quarter, ArrayList dateTime, ArrayList jobs) {
             Machine m = new Machine(year, quarter, dateTime, jobs);
             machines.Add(m);
         }
 
-        public void removeMachine(Machine x) {
+        public void RemoveMachine(Machine x) {
             if (machines.Contains(x)) machines.Remove(x);
         }
 
-        public void scheduleMachine(Machine x, Job j) {
+        //does not yet take preferences into account
+        public void ScheduleMachine(Machine x, Job j) {
             if (machines.Contains(x)) {
                 int num = machines.IndexOf(x);
                 Machine m = (Machine)machines[num];
-                if (!m.checkInUse()) {
-                    m.setInUse(true);
-                    m.setCurrentJobProcessing(j);
+                if (!m.CheckInUse()) {
+                    m.SetInUse(true);
+                    m.SetCurrentJobProcessing(j);
                 } else {
-                    Console.WriteLine("Cannot schedule because machine is busy");
+                    Console.WriteLine("Cannot schedule -- machine is busy");
                 }
             }
         }
 
-        public void unscheduleMachine(Machine x) {
+        public void UnscheduleMachine(Machine x) {
             if(machines.Contains(x)) {
                 int num = machines.IndexOf(x);
                 Machine m = (Machine)machines[num];
-                m.setInUse(false);
-                m.setCurrentJobProcessing(null);
+                m.SetInUse(false);
+                m.SetCurrentJobProcessing(null);
             }
         }
 
-        public ArrayList getAllScheduledMachines() {
+        public ArrayList GetAllScheduledMachines() {
             ArrayList scheduledMachines = new ArrayList();
             for(int i = 0; i < machines.Capacity; i++ ) {
                 Machine m = (Machine)machines[i];
-                if (m.checkInUse()) scheduledMachines.Add(m);
+                if (m.CheckInUse()) scheduledMachines.Add(m);
             }
             return scheduledMachines;
         }

@@ -13,7 +13,16 @@ namespace Scheduler {
         private int quarter;
         private ArrayList jobs;
         private Job currentJobProcessing;
-        private ArrayList dateTime;
+        private ArrayList dateTime; //datetimes from class?
+
+        public Machine() {
+            this.year = 0;
+            this.quarter = 0;
+            dateTime = new ArrayList();
+            this.jobs = new ArrayList();
+            inUse = false;
+            currentJobProcessing = null;
+        }
 
         public Machine(int year, int quarter, ArrayList dt, ArrayList jobs) {
             this.year = year;
@@ -24,44 +33,48 @@ namespace Scheduler {
             currentJobProcessing = null;
         }
 
-        public bool canDoJob(Job job) {
+        public bool CanDoJob(Job job) {
             return jobs.Contains(job);
         }
 
-        public bool checkInUse() {
+        public bool CheckInUse() {
             return inUse;
         }
 
-        public void setInUse(bool x) {
+        public void SetInUse(bool x) {
             inUse = x;
         }
 
-        public void addJob(Job s) {
+        public void AddJob(Job s) {
             if(!jobs.Contains(s)) jobs.Add(s);
         }
 
-        public void deleteJob(Job s) {
+        public void DeleteJob(Job s) {
             if (jobs.Contains(s)) jobs.Remove(s);
         }
 
-        public int getYear() {
+        public int GetYear() {
             return year;
         }
 
-        public int getQuarter() {
+        public int GetQuarter() {
             return quarter;
         }
 
-        public Job getCurrentJobProcessing() {
+        public Job GetCurrentJobProcessing() {
             return currentJobProcessing;
         }
 
-        public void setCurrentJobProcessing(Job s) {
+        public void SetCurrentJobProcessing(Job s) {
             currentJobProcessing = s;
         }
 
-        public ArrayList getDateTime() {
+        public ArrayList GetDateTime() {
             return dateTime;
+        }
+
+        public void AddDayTime(DayTime dt) {
+            dateTime.Add(dt);
         }
     }
 }

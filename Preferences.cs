@@ -14,19 +14,19 @@ namespace Scheduler {
             preferences = new Hashtable();
         }
 
-        public void addPreference(String name, Object a) {
+        public void AddPreference(String name, Object a) {
             if(!preferences.ContainsKey(name)) preferences.Add(name, a);
         }
 
-        public void deletePreference(String name) {
+        public void DeletePreference(String name) {
             if (preferences.ContainsKey(name)) preferences.Remove(name);
         }
 
-        public bool exists(String name) {
+        public bool Exists(String name) {
             return preferences.ContainsKey(name);
         }
 
-        public Object getPreference(String name) {
+        public Object GetPreference(String name) {
             return preferences[name];
         }
 
