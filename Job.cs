@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Scheduler {
-    class Job {
+    class Job { //class only used for major courses?
 
         private int id;
         private bool scheduled;
@@ -24,5 +24,6 @@ namespace Scheduler {
             scheduled = s;
         }
 
+        public int GetID() { return id; }
     }
 }

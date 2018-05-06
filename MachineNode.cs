@@ -15,6 +15,15 @@ namespace Scheduler {
         private int quarter;
         private Preferences preferences;
 
+        public MachineNode(int year, int quarter) {
+            this.year = year;
+            this.quarter = quarter;
+            machines = new ArrayList();
+            creditsScheduled = 0;
+            majorCreditsScheduled = 0;
+            preferences = new Preferences();
+        }
+
         public MachineNode(ArrayList m, int year, int quarter, Preferences p) {
             this.year = year;
             this.quarter = quarter;
@@ -23,6 +32,12 @@ namespace Scheduler {
             majorCreditsScheduled = 0;
             preferences = p;
         }
+
+        public int GetYear() { return year; }
+
+        public int GetQuarter() { return quarter; }
+
+        public ArrayList GetMachines() { return machines; }
 
         public int GetCreditsScheduled() {
             return creditsScheduled;

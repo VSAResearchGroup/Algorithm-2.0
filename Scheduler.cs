@@ -19,8 +19,14 @@ namespace Scheduler {
         private Preferences preferences;
         private ArrayList completedPrior;//starting point
 
+        private const int QUARTERS = 4;
+
         public Scheduler() {
+            machineNodes = new ArrayList();
+            finalPlan = new ArrayList();
+            completedPrior = new ArrayList();
             OpenSQLConnection();
+            InitMachineNodes();
             InitMachines();
         }
 
@@ -46,34 +52,98 @@ namespace Scheduler {
             return finalPlan;
         }
 
+        private void InitMachineNodes() {
+            for(int i = 0; i < QUARTERS; i++) {
+                MachineNode m = new MachineNode(0, i);
+                machineNodes.Add(m);
+            }
+        }
+
+        /*  
+         BIG DATABASE MACHINES ASSUMPTION: each course is entered continuosly. For example,
+         course 1 has DayTimes of A, B and C. Course 2 had DayTimes of D, E, and F.
+         OK: ABCDEF, NOT OK: ABDCEF or any other combo
+
+            this is ok as long as the query makes it that way, you cannot assume that in the database it will 
+            be entered that way. MAKE SURE YOU DO SOMETHING LIKE GROUP BY AND TEST IT!!!
+             */
+
+
         //create a query that will pull all the different machines
         //which means getting every single time slot
         //distinct year, quarter, time, and set of DayTimes
         private void InitMachines() {
-            string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID from CourseTime;";
+            string query = "select top 20 CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
             DataTable dt = ExecuteQuery(query);
             Machine dummyMachine = new Machine();
             DayTime dummyDayTime = new DayTime();
-            int currentCourse = 0;
-            int course = (int)ItemArray[0];
+            int dt_size = dt.Rows.Count - 1;
+            DataRow dr = dt.Rows[dt_size];
+            int currentCourse = (int)dr.ItemArray[0];
+            int currentSection = (int)dr.ItemArray[5];
+            int course = 0;
             int start = 0;
             int end = 0;
             int day = 0;
             int quarter = 0;
+            int section = 0;
 
-            foreach (DataRow row in dt.Rows) {
-                currentCourse = (int)row.ItemArray[0];
-                if(currentCourse == course) {
+            //this is another way to loop through the table
+            //this is better because you can use continue
+            //transfer the data from the for loop
+            while (dt_size >= 0) {
+                dr = dt.Rows[dt_size];
+                course = (int)dr.ItemArray[0];
+                section = (int)dr.ItemArray[5];
 
+                //same course but different section is a different machine
+                //different course is a different machine
+                if ((currentCourse == course && currentSection != section) || (currentCourse != course)) {
+                    dummyMachine = new Machine();
+                    currentCourse = (int)dr.ItemArray[0];
                 }
-                course = (int)row.ItemArray[0];
-                start = (int)row.ItemArray[1];
-                end = (int)row.ItemArray[2];
-                day = (int)row.ItemArray[3];
-                quarter = (int)row.ItemArray[4];
+                start = (int)dr.ItemArray[1];
+                end = (int)dr.ItemArray[2];
+                day = (int)dr.ItemArray[3];
+                quarter = (int)dr.ItemArray[4];
 
                 dummyDayTime.SetDayTime(day, start, end);
-                
+                dummyMachine.AddDayTime(dummyDayTime);
+                dummyMachine.SetQuarter(quarter);
+                dummyMachine.AddJob(new Job(course));
+
+                //we add a new machine when we peek to the next row and see
+                //(different course) OR (same course, different section)
+                if ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
+                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse &&
+                    (int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection)) {
+                   
+                    for (int i = 0; i < machineNodes.Count; i++) {
+                        MachineNode mn = (MachineNode)machineNodes[i];
+                        ArrayList machines = mn.GetMachines();
+                        if (machines.Count > 0) {
+                            for (int j = 0; j < machines.Count; j++) {
+                                Machine m = (Machine)machines[j];
+                                if (m == dummyMachine) { //found the machine, just add job
+                                    m.AddJob(new Job(course));
+                                } else { //machine does not exist, add it in
+                                    machines.Add(dummyMachine);
+                                }
+                            }
+                        } else if(dummyMachine.GetYear() == mn.GetYear() && dummyMachine.GetQuarter() == mn.GetQuarter()) {
+                            machines.Add(dummyMachine);
+                        }
+                    }
+                }
+                dt_size--;
+            }
+            //print machines for testing
+            for (int i = 0; i < machineNodes.Count; i++) {
+                ArrayList machines = (ArrayList)machineNodes[i];
+                for (int j = 0; j < machines.Count; j++) {
+                    Machine m = (Machine)machines[j];
+                    m.Print();
+                }
             }
         }
 
@@ -117,11 +187,14 @@ namespace Scheduler {
             •	Being scheduled during the summer
             •	Maximum number of core courses per quarter
             •	How many quarters you’d like to spread the plan over (MAX of 16)
-            •	Time interval for when a person is available to go to class. For example, they are available 8AM-1PM
+            •	Time interval for when a person is available to go to 
+                        class. For example, they are available 8AM-1PM.
+                        LOOK AT TABLE TimeSlot
             •	Credits they would like to take per quarter.
             •	starting quarter of plan. [1,2,3,4]
 
         */
+
         //hard coded now, take from UI later
         private void CreatePreferences() {
             preferences = new Preferences();

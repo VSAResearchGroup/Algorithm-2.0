@@ -45,6 +45,10 @@ namespace Scheduler {
             inUse = x;
         }
 
+        public void SetQuarter(int q) {
+            quarter = q;
+        }
+
         public void AddJob(Job s) {
             if(!jobs.Contains(s)) jobs.Add(s);
         }
@@ -74,7 +78,45 @@ namespace Scheduler {
         }
 
         public void AddDayTime(DayTime dt) {
-            dateTime.Add(dt);
+            if(!dateTime.Contains(dt)) {
+                dateTime.Add(dt);
+            }
+        }
+
+        public void Print() {
+            Console.WriteLine("-----------------------------------");
+            Console.WriteLine("Year: " + year);
+            Console.WriteLine("Quarter: " + quarter);
+            Console.WriteLine("Jobs:");
+            for(int i = 0; i < jobs.Count; i++) {
+                Job j = (Job)jobs[i];
+                Console.WriteLine(j.GetID());
+            }
+            Console.WriteLine("DayTimes:");
+            for (int i = 0; i < dateTime.Count; i++) {
+                DayTime dt = (DayTime)dateTime[i];
+                Console.WriteLine("Day: " + dt.GetDay());
+                Console.WriteLine("Start time: " + dt.GetStartTime());
+                Console.WriteLine("End time: " + dt.GetEndTime());
+            }
+            Console.WriteLine("-----------------------------------");
+        }
+
+        public static bool operator ==(Machine thism, Machine right) {
+            if(thism.quarter != right.quarter || thism.year != right.year
+                || thism.dateTime.Count != right.dateTime.Count) {
+                return false;
+            }
+            for(int i = 0; i < thism.dateTime.Count; i++) {
+                if(!thism.dateTime.Contains(right.dateTime[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool operator !=(Machine thism, Machine right) {
+            return !(thism==right);
         }
     }
 }

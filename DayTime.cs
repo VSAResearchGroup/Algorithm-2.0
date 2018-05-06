@@ -36,5 +36,17 @@ namespace Scheduler {
             end_time = et;
         }
 
+        public static bool operator ==(DayTime thism, DayTime right) {
+            if (thism.day != right.day || thism.start_time != right.start_time 
+                || thism.end_time != right.end_time) {
+                return false;
+            }
+            return true;
+        }
+
+        public static bool operator !=(DayTime thism, DayTime right) {
+            return !(thism == right);
+        }
+
     }
 }
