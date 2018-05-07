@@ -53,7 +53,7 @@ namespace Scheduler {
         }
 
         private void InitMachineNodes() {
-            for(int i = 0; i < QUARTERS; i++) {
+            for(int i = 1; i <= QUARTERS; i++) {
                 MachineNode m = new MachineNode(0, i);
                 machineNodes.Add(m);
             }
@@ -80,6 +80,7 @@ namespace Scheduler {
             int dt_size = dt.Rows.Count - 1;
             DataRow dr = dt.Rows[dt_size];
             int currentCourse = (int)dr.ItemArray[0];
+            int currentQuarter = (int)dr.ItemArray[4];
             int currentSection = (int)dr.ItemArray[5];
             int course = 0;
             int start = 0;
@@ -95,29 +96,32 @@ namespace Scheduler {
                 dr = dt.Rows[dt_size];
                 course = (int)dr.ItemArray[0];
                 section = (int)dr.ItemArray[5];
+                quarter = (int)dr.ItemArray[4];
+                //going to have to do the same with year probably
 
                 //same course but different section is a different machine
                 //different course is a different machine
-                if ((currentCourse == course && currentSection != section) || (currentCourse != course)) {
+                if ((currentCourse == course && (currentSection != section || currentQuarter != quarter)) || (currentCourse != course)) {
                     dummyMachine = new Machine();
                     currentCourse = (int)dr.ItemArray[0];
+                    currentSection = (int)dr.ItemArray[5];
+                    currentQuarter = (int)dr.ItemArray[4];
                 }
                 start = (int)dr.ItemArray[1];
                 end = (int)dr.ItemArray[2];
                 day = (int)dr.ItemArray[3];
-                quarter = (int)dr.ItemArray[4];
-
+                dummyDayTime = new DayTime();
                 dummyDayTime.SetDayTime(day, start, end);
                 dummyMachine.AddDayTime(dummyDayTime);
                 dummyMachine.SetQuarter(quarter);
-                dummyMachine.AddJob(new Job(course));
 
                 //we add a new machine when we peek to the next row and see
-                //(different course) OR (same course, different section)
-                if ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
-                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse &&
-                    (int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection)) {
-                   
+                //(different course) OR (same course and (different section OR dif qtr))
+                if (dt_size==0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
+                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)
+                    )
+                    ) {
+                    dummyMachine.AddJob(new Job(course));
                     for (int i = 0; i < machineNodes.Count; i++) {
                         MachineNode mn = (MachineNode)machineNodes[i];
                         ArrayList machines = mn.GetMachines();
@@ -126,12 +130,20 @@ namespace Scheduler {
                                 Machine m = (Machine)machines[j];
                                 if (m == dummyMachine) { //found the machine, just add job
                                     m.AddJob(new Job(course));
-                                } else { //machine does not exist, add it in
+                                } else if(dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { //machine does not exist, add it in
                                     machines.Add(dummyMachine);
+                                    break;
                                 }
                             }
-                        } else if(dummyMachine.GetYear() == mn.GetYear() && dummyMachine.GetQuarter() == mn.GetQuarter()) {
+                        } else if(dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { 
                             machines.Add(dummyMachine);
+                            break;
+                        } else {
+                            Console.WriteLine("Dummy Machine Year: " + dummyMachine.GetYear());
+                            Console.WriteLine("Dummy Machine Quarter: " + dummyMachine.GetQuarter());
+                            Console.WriteLine("mn Year: " + mn.GetYear());
+                            Console.WriteLine("mn Quarter: " + mn.GetQuarter());
+                            Console.WriteLine('\n');
                         }
                     }
                 }
@@ -139,7 +151,9 @@ namespace Scheduler {
             }
             //print machines for testing
             for (int i = 0; i < machineNodes.Count; i++) {
-                ArrayList machines = (ArrayList)machineNodes[i];
+                MachineNode mn = (MachineNode)machineNodes[i];
+                ArrayList machines = mn.GetMachines();
+                Console.WriteLine("Quarter: " + mn.GetQuarter());
                 for (int j = 0; j < machines.Count; j++) {
                     Machine m = (Machine)machines[j];
                     m.Print();
