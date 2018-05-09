@@ -50,7 +50,7 @@ namespace Scheduler {
         }
 
         public void AddJob(Job s) {
-            if(!jobs.Contains(s)) jobs.Add(s);
+            if (!jobs.Contains(s)) jobs.Add(s);
         }
 
         public void DeleteJob(Job s) {
@@ -78,7 +78,7 @@ namespace Scheduler {
         }
 
         public void AddDayTime(DayTime dt) {
-            if(!dateTime.Contains(dt)) {
+            if (!dateTime.Contains(dt)) {
                 dateTime.Add(dt);
             }
         }
@@ -88,7 +88,7 @@ namespace Scheduler {
             Console.WriteLine("Year: " + year);
             Console.WriteLine("Quarter: " + quarter);
             Console.WriteLine("Jobs:");
-            for(int i = 0; i < jobs.Count; i++) {
+            for (int i = 0; i < jobs.Count; i++) {
                 Job j = (Job)jobs[i];
                 Console.WriteLine(j.GetID());
             }
@@ -102,13 +102,23 @@ namespace Scheduler {
             Console.WriteLine("-----------------------------------");
         }
 
+        private bool ContainsDayTime(ArrayList times, DayTime dt) {
+            for(int i = 0; i < times.Count; i++) {
+                DayTime time = (DayTime)times[i];
+                if(time == dt) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static bool operator ==(Machine thism, Machine right) {
-            if(thism.quarter != right.quarter || thism.year != right.year
+            if (thism.quarter != right.quarter || thism.year != right.year
                 || thism.dateTime.Count != right.dateTime.Count) {
                 return false;
             }
-            for(int i = 0; i < thism.dateTime.Count; i++) {
-                if(!thism.dateTime.Contains(right.dateTime[i])) {
+            for (int i = 0; i < thism.dateTime.Count; i++) {
+                if (!thism.ContainsDayTime(thism.dateTime, (DayTime)right.dateTime[i])) {
                     return false;
                 }
             }
@@ -116,7 +126,9 @@ namespace Scheduler {
         }
 
         public static bool operator !=(Machine thism, Machine right) {
-            return !(thism==right);
+            return !(thism == right);
         }
+
+
     }
 }

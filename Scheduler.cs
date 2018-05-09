@@ -25,7 +25,6 @@ namespace Scheduler {
             machineNodes = new ArrayList();
             finalPlan = new ArrayList();
             completedPrior = new ArrayList();
-            OpenSQLConnection();
             InitMachineNodes();
             InitMachines();
         }
@@ -53,7 +52,7 @@ namespace Scheduler {
         }
 
         private void InitMachineNodes() {
-            for(int i = 1; i <= QUARTERS; i++) {
+            for (int i = 1; i <= QUARTERS; i++) {
                 MachineNode m = new MachineNode(0, i);
                 machineNodes.Add(m);
             }
@@ -73,7 +72,7 @@ namespace Scheduler {
         //which means getting every single time slot
         //distinct year, quarter, time, and set of DayTimes
         private void InitMachines() {
-            string query = "select top 20 CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
+            string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
             DataTable dt = ExecuteQuery(query);
             Machine dummyMachine = new Machine();
             DayTime dummyDayTime = new DayTime();
@@ -94,6 +93,15 @@ namespace Scheduler {
             //transfer the data from the for loop
             while (dt_size >= 0) {
                 dr = dt.Rows[dt_size];
+                //check for null values
+                if(dr.ItemArray[0] == DBNull.Value || dr.ItemArray[1] == DBNull.Value || 
+                    dr.ItemArray[2] == DBNull.Value || dr.ItemArray[3] == DBNull.Value || 
+                    dr.ItemArray[4] == DBNull.Value || dr.ItemArray[5] == DBNull.Value) {
+                    dt_size--;
+                    continue;
+                }
+
+                
                 course = (int)dr.ItemArray[0];
                 section = (int)dr.ItemArray[5];
                 quarter = (int)dr.ItemArray[4];
@@ -117,7 +125,7 @@ namespace Scheduler {
 
                 //we add a new machine when we peek to the next row and see
                 //(different course) OR (same course and (different section OR dif qtr))
-                if (dt_size==0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
+                if (dt_size == 0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
                     ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)
                     )
                     ) {
@@ -130,12 +138,12 @@ namespace Scheduler {
                                 Machine m = (Machine)machines[j];
                                 if (m == dummyMachine) { //found the machine, just add job
                                     m.AddJob(new Job(course));
-                                } else if(dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { //machine does not exist, add it in
+                                } else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { //machine does not exist, add it in
                                     machines.Add(dummyMachine);
                                     break;
                                 }
                             }
-                        } else if(dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { 
+                        } else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) {
                             machines.Add(dummyMachine);
                             break;
                         } else {
@@ -166,6 +174,7 @@ namespace Scheduler {
         }
 
         private DataTable ExecuteQuery(string query) {
+            OpenSQLConnection();
             SqlCommand cmd = new SqlCommand(query, myConnection);
             DataTable dt = new DataTable();
             using (var con = myConnection) {

@@ -14,6 +14,7 @@ namespace Scheduler {
             ArrayList schedule = new ArrayList();
             schedule = scheduler.CreateSchedule();
             Console.WriteLine(schedule);
+            Console.ReadLine();
         }
     }
 }
