@@ -27,6 +27,7 @@ namespace Scheduler {
             completedPrior = new ArrayList();
             InitMachineNodes();
             InitMachines();
+            InitYearTwo(); //temporary fix for the second year
         }
 
         public ArrayList CreateSchedule() {
@@ -49,6 +50,25 @@ namespace Scheduler {
              *
              */
             return finalPlan;
+        }
+
+        private void InitYearTwo() {
+            //init more machine nodes for the next year
+            for (int i = 1; i <= QUARTERS; i++) {
+                MachineNode m = new MachineNode(1, i);
+                machineNodes.Add(m);
+            }
+            //transfer all the same classes to the set of machine nodes
+            for(int i = 4; i < 8; i++) {
+                MachineNode oldMn = (MachineNode)machineNodes[i - 4];
+                MachineNode newMn = (MachineNode)machineNodes[i];
+                for(int j = 0; j < oldMn.GetMachines().Count; j++) {
+                    Machine oldMachine = (Machine)oldMn.GetMachines()[j];
+                    Machine newMachine = new Machine(oldMachine);
+                    newMachine.SetYear(1);
+                    newMn.AddMachine(newMachine);
+                }
+            }
         }
 
         private void InitMachineNodes() {
@@ -88,9 +108,6 @@ namespace Scheduler {
             int quarter = 0;
             int section = 0;
 
-            //this is another way to loop through the table
-            //this is better because you can use continue
-            //transfer the data from the for loop
             while (dt_size >= 0) {
                 dr = dt.Rows[dt_size];
                 //check for null values

@@ -52,6 +52,10 @@ namespace Scheduler {
             machines.Add(m);
         }
 
+        public void AddMachine(Machine m) {
+            machines.Add(m);
+        }
+
         public void RemoveMachine(Machine x) {
             if (machines.Contains(x)) machines.Remove(x);
         }

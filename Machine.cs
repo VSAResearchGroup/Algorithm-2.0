@@ -33,6 +33,17 @@ namespace Scheduler {
             currentJobProcessing = null;
         }
 
+        public Machine(Machine m) {
+            this.year = m.year;
+            this.quarter = m.quarter;
+            dateTime = new ArrayList();
+            dateTime = m.dateTime;
+            this.jobs = new ArrayList();
+            jobs = m.jobs;
+            inUse = false;
+            currentJobProcessing = null;
+        }
+
         public bool CanDoJob(Job job) {
             return jobs.Contains(job);
         }
@@ -47,6 +58,10 @@ namespace Scheduler {
 
         public void SetQuarter(int q) {
             quarter = q;
+        }
+
+        public void SetYear(int q) {
+            year = q;
         }
 
         public void AddJob(Job s) {
