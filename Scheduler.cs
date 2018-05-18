@@ -31,38 +31,58 @@ namespace Scheduler {
         }
 
         public ArrayList CreateSchedule() {
-            /*
-             * 
-        •	For each major course
-            o	Depth first search traversal down to the lowest node
-            o	If job is marked scheduled, skip the branch (this prevents from visiting repeat branches. Because if a job is marked visited, that means all its prerequisites have been scheduled)
-            o	Schedule it by finding the earliest available machine to take it (machine that is unscheduled currently)
-            o	Mark machine as in use
-            o	Mark job as visited
-            o	Traverse back up, scheduling them until you come back to the major course
-            o	Schedule the major course
-            o	Mark machine as in use
-        •	If a certain amount of machines for a particular quarter is taken up (your preferred maximum amount of credits), find a machine in a later quarter
-            o	Make sure to preserve the order
-        •	To change preferences (such as time of the day), pick different machines which specialize in that quarter, just make sure you are preserving the order of the sequence
-        •	In the end, traverse through the list of machines. The ones that are scheduled are your schedule
-        •	Done 
-             *
-             */
+            ArrayList majorCourses = myPlan.GetList(0);
+            for (int i = 0; i < majorCourses.Count; i++) { 
+                Job job = (Job)majorCourses[i];
+                ScheduleCourse(job);
+            }
+            finalPlan = GetBusyMachines();
             return finalPlan;
         }
+        //**********************   LEFT OFF HERE ****************************************
+        //TO DO NEXT ON THIS METHOD: make the top comments a reality; this will be a
+        //recursive function
+        private void ScheduleCourse(Job job) {
+            //if j does not have prerequisites
+                //schedule j
+            //else
+                //schedule j's prerequisites by geting shortest group and whatnot
+            int num = job.GetID();
+            List<CourseNode> groups = network.FindShortPath(num);//find prerequisite group
+            int shortest = GetShortestGroup(groups);//so now we have the shortest list
+            List<CourseNode> group = groups[shortest].prereqs;
+            ArrayList jobsToBeScheduled = new ArrayList();
+            for (int j = 0; j < group.Count; j++) {
+                Job myJob = new Job(groups[j].courseID);
+                jobsToBeScheduled.Add(myJob);
+            }//now we have a list full of jobs to be scheduled
 
-        private void InitYearTwo() {
+            for (int k = 0; k < jobsToBeScheduled.Count; k++) { //schedule them all here
+                ScheduleCourse((Job)jobsToBeScheduled[k]);
+            }//now they are scheduled
+        }
+
+        private int GetShortestGroup(List<CourseNode> groups) {
+            int shortest = 0;
+            for (int j = 1; j < groups.Count; j++) { //find the shortest group.
+                if (groups[j].prereqs.Count < shortest) {
+                    shortest = j;
+                }
+            }//so now we have the shortest list
+            return shortest;
+        }
+
+         private void InitYearTwo() {
             //init more machine nodes for the next year
             for (int i = 1; i <= QUARTERS; i++) {
                 MachineNode m = new MachineNode(1, i);
                 machineNodes.Add(m);
             }
             //transfer all the same classes to the set of machine nodes
-            for(int i = 4; i < 8; i++) {
+            for (int i = 4; i < 8; i++) {
                 MachineNode oldMn = (MachineNode)machineNodes[i - 4];
                 MachineNode newMn = (MachineNode)machineNodes[i];
-                for(int j = 0; j < oldMn.GetMachines().Count; j++) {
+                for (int j = 0; j < oldMn.GetMachines().Count; j++) {
                     Machine oldMachine = (Machine)oldMn.GetMachines()[j];
                     Machine newMachine = new Machine(oldMachine);
                     newMachine.SetYear(1);
@@ -111,14 +131,14 @@ namespace Scheduler {
             while (dt_size >= 0) {
                 dr = dt.Rows[dt_size];
                 //check for null values
-                if(dr.ItemArray[0] == DBNull.Value || dr.ItemArray[1] == DBNull.Value || 
-                    dr.ItemArray[2] == DBNull.Value || dr.ItemArray[3] == DBNull.Value || 
+                if (dr.ItemArray[0] == DBNull.Value || dr.ItemArray[1] == DBNull.Value ||
+                    dr.ItemArray[2] == DBNull.Value || dr.ItemArray[3] == DBNull.Value ||
                     dr.ItemArray[4] == DBNull.Value || dr.ItemArray[5] == DBNull.Value) {
                     dt_size--;
                     continue;
                 }
 
-                
+
                 course = (int)dr.ItemArray[0];
                 section = (int)dr.ItemArray[5];
                 quarter = (int)dr.ItemArray[4];
@@ -212,7 +232,8 @@ namespace Scheduler {
             DataTable dt = ExecuteQuery(query);
             ArrayList courseNums = new ArrayList();
             foreach (DataRow row in dt.Rows) {
-                courseNums.Add(row.ItemArray[0]);
+                Job job = new Job((int)row.ItemArray[0]);
+                courseNums.Add(job);
             }
             myPlan = new DegreePlan(courseNums);
         }
