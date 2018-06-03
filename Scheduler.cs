@@ -18,6 +18,7 @@ namespace Scheduler {
         private ArrayList finalPlan;     //output schedule
         private Preferences preferences;
         private ArrayList completedPrior;//starting point
+        private ArrayList unableToSchedule;
 
         private const int QUARTERS = 4;
 
@@ -25,6 +26,7 @@ namespace Scheduler {
             machineNodes = new ArrayList();
             finalPlan = new ArrayList();
             completedPrior = new ArrayList();
+            unableToSchedule = new ArrayList();
             InitMachineNodes();
             InitMachines();
             InitYearTwo(); //temporary fix for the second year
@@ -32,34 +34,107 @@ namespace Scheduler {
 
         public ArrayList CreateSchedule() {
             ArrayList majorCourses = myPlan.GetList(0);
-            for (int i = 0; i < majorCourses.Count; i++) { 
+            for (int i = 0; i < majorCourses.Count; i++) {
                 Job job = (Job)majorCourses[i];
                 ScheduleCourse(job);
             }
             finalPlan = GetBusyMachines();
             return finalPlan;
         }
-        //**********************   LEFT OFF HERE ****************************************
-        //TO DO NEXT ON THIS METHOD: make the top comments a reality; this will be a
-        //recursive function
+
+        //make it similar to depth first search?
         private void ScheduleCourse(Job job) {
-            //if j does not have prerequisites
-                //schedule j
-            //else
-                //schedule j's prerequisites by geting shortest group and whatnot
             int num = job.GetID();
             List<CourseNode> groups = network.FindShortPath(num);//find prerequisite group
-            int shortest = GetShortestGroup(groups);//so now we have the shortest list
-            List<CourseNode> group = groups[shortest].prereqs;
-            ArrayList jobsToBeScheduled = new ArrayList();
-            for (int j = 0; j < group.Count; j++) {
-                Job myJob = new Job(groups[j].courseID);
-                jobsToBeScheduled.Add(myJob);
-            }//now we have a list full of jobs to be scheduled
+            if (groups.Count == 0 || job.GetPrerequisitesScheduled()) { //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
+                PutCourseOnMachine(job, groups);
+                return;
+            } else {//schedule j's prerequisites by geting shortest group and whatnot
+                if (job.GetScheduled()) {
+                    return;
+                }
+                int shortest = GetShortestGroup(groups);//so now we have the shortest list
+                List<CourseNode> group = groups[shortest].prereqs;
+                ArrayList jobsToBeScheduled = new ArrayList();
+                for (int j = 0; j < group.Count; j++) {
+                    Job myJob = new Job(groups[j].courseID);
+                    jobsToBeScheduled.Add(myJob);
+                }//now we have a list full of jobs to be scheduled
 
-            for (int k = 0; k < jobsToBeScheduled.Count; k++) { //schedule them all here
-                ScheduleCourse((Job)jobsToBeScheduled[k]);
-            }//now they are scheduled
+                for (int k = 0; k < jobsToBeScheduled.Count; k++) { //schedule them all here
+                    ScheduleCourse((Job)jobsToBeScheduled[k]);
+                }//now they are scheduled
+                job.SetPrerequisitesScheduled(true);
+            }
+            return;
+        }
+
+        //preferences not implemented yet but this is where they would happen
+
+        //HERE YOU WILL ALSO DETERMINE WHAT TO DO IF IT CANT BE SCHEDULED
+        private void PutCourseOnMachine(Job j, List<CourseNode> groups) {
+            //get most recent prereq
+            int mostRecentPrereqYear = 0;
+            int mostRecentPrereqQuarter = 1;
+            int start = 0;
+            //if no prereqs then schedule at any time
+            if (groups.Count > 0) { //this is if there are prereqs
+                int[] yq = GetMostRecentPrereq(groups);
+                mostRecentPrereqYear = yq[0];
+                mostRecentPrereqQuarter = yq[1];
+
+                //schedule 1 or more quarters after, mind the year
+                //schedule on nearest available machine
+                //start i at whatever quarter you calculate, not simply zero
+
+                start = (mostRecentPrereqYear * 4 + mostRecentPrereqQuarter - 1) + 1;
+
+            }
+            for (int i = start; i < machineNodes.Count; i++) {
+                MachineNode mn = (MachineNode)machineNodes[i];
+                ArrayList machines = mn.GetMachines();
+                for (int k = 0; k < machines.Count; k++) {
+                    Machine m = (Machine)machines[k];
+                    if (m.CanDoJob(j) && !m.CheckInUse()) { //if not in use and it can do the job
+                        m.SetCurrentJobProcessing(j);
+                        m.SetInUse(true);
+                        j.SetScheduled(true);
+                    }
+                }
+            }
+            if (!j.GetScheduled()) { //figure out what to do if it wasn't able to be scheduled
+                unableToSchedule.Add(j);  
+            }
+        }
+
+        //find by retrieving job and looking at when it was scheduled
+        //only called if the job actually has prerequisites
+        //this algorithm should be optimized for speed. right now it is just doing a linear search
+        // n times where n is the number of prerequisites
+        private int[] GetMostRecentPrereq(List<CourseNode> groups) {
+            int[] yq = new int[2];
+            int mostRecentPrereqYear = -1;
+            int mostRecentPrereqQuarter = -1;
+            for (int i = 0; i < groups.Count; i++) {
+                for (int k = 0; k < machineNodes.Count; k++) {
+                    MachineNode mn = (MachineNode)machineNodes[k];
+                    ArrayList machines = mn.GetMachines();
+                    for (int j = 0; j < machines.Count; j++) {
+                        Machine m = (Machine)machines[j];
+                        if(m.GetCurrentJobProcessing().GetID() == groups[i].courseID) { //found the course
+                            if(m.GetCurrentJobProcessing().GetYearScheduled() > mostRecentPrereqYear ||
+                                (m.GetCurrentJobProcessing().GetYearScheduled() == mostRecentPrereqYear &&
+                                m.GetCurrentJobProcessing().GetQuarterScheduled() > mostRecentPrereqQuarter) ) { //now check if it is more recent
+                                mostRecentPrereqYear = m.GetCurrentJobProcessing().GetYearScheduled();
+                                mostRecentPrereqQuarter = m.GetCurrentJobProcessing().GetQuarterScheduled();
+                            }
+                        }
+                    }
+                }
+            }
+            yq[0] = mostRecentPrereqYear;
+            yq[1] = mostRecentPrereqQuarter;
+            return yq;
         }
 
         private int GetShortestGroup(List<CourseNode> groups) {
@@ -72,7 +147,7 @@ namespace Scheduler {
             return shortest;
         }
 
-         private void InitYearTwo() {
+        private void InitYearTwo() {
             //init more machine nodes for the next year
             for (int i = 1; i <= QUARTERS; i++) {
                 MachineNode m = new MachineNode(1, i);
@@ -245,14 +320,14 @@ namespace Scheduler {
 
 
         /*
-            •	Being scheduled during the summer
-            •	Maximum number of core courses per quarter
-            •	How many quarters you’d like to spread the plan over (MAX of 16)
+            •	Being scheduled during the summer   (WILL IMPLEMENT THIS QUARTER)
+            •	Maximum number of core courses per quarter   (WILL NOT IMPLEMENT THIS QUARTER)
+            •	How many quarters you’d like to spread the plan over (MAX of 16)   (WILL NOT IMPLEMENT THIS QUARTER)
             •	Time interval for when a person is available to go to 
                         class. For example, they are available 8AM-1PM.
-                        LOOK AT TABLE TimeSlot
-            •	Credits they would like to take per quarter.
-            •	starting quarter of plan. [1,2,3,4]
+                        LOOK AT TABLE TimeSlot   (WILL NOT IMPLEMENT THIS QUARTER)
+            •	Credits they would like to take per quarter.   (WILL IMPLEMENT THIS QUARTER)
+            •	starting quarter of plan. [1,2,3,4]  (WILL IMPLEMENT THIS QUARTER)
 
         */
 
@@ -263,7 +338,7 @@ namespace Scheduler {
             preferences.AddPreference("CORE_PER_QUARTER", 10);
             preferences.AddPreference("MAX_QUARTERS", 16);
             preferences.AddPreference("TIME_INTERVAL", new DayTime(1, 70, 130)); //do a whole bunch?
-            preferences.AddPreference("CREDITS_PER_QUARTER", 20);
+            preferences.AddPreference("CREDITS_PER_QUARTER", 15);
             preferences.AddPreference("STARTING_QUARTER", 2);
         }
 
@@ -274,6 +349,10 @@ namespace Scheduler {
                 busy.Add(mn.GetAllScheduledMachines());
             }
             return busy;
+        }
+
+        public ArrayList GetUnscheduledCourses() {
+            return unableToSchedule;
         }
 
     }

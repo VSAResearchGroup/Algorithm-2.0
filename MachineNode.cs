@@ -85,7 +85,7 @@ namespace Scheduler {
 
         public ArrayList GetAllScheduledMachines() {
             ArrayList scheduledMachines = new ArrayList();
-            for(int i = 0; i < machines.Capacity; i++ ) {
+            for(int i = 0; i < machines.Count; i++ ) {
                 Machine m = (Machine)machines[i];
                 if (m.CheckInUse()) scheduledMachines.Add(m);
             }

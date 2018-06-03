@@ -1,4 +1,4 @@
-﻿#region Author Information
+﻿ #region Author Information
 /*
  * Andrue Cashman
  * University of Washington Bothell
@@ -19,8 +19,7 @@ using System.Collections.Generic;
 #endregion
 
 namespace Scheduler {
-    public class CourseNode
-    {
+    public class CourseNode {
         #region Structure Variables
         public int courseID { get; set; } //Represents the Unique ID number for a course
         public int groupID { get; set; } //Represents the Group ID for the Course
@@ -30,8 +29,7 @@ namespace Scheduler {
 
         #region Constructors
         #region Default Constructor
-        public CourseNode()
-        {
+        public CourseNode() {
             courseID = 0;
             groupID = 0;
             prerequisiteID = 0;
@@ -40,17 +38,13 @@ namespace Scheduler {
         #endregion]
 
         #region Two-Parameter Constructor
-        public CourseNode(CourseNode temp, bool withList)
-        {
+        public CourseNode(CourseNode temp, bool withList) {
             courseID = temp.courseID;
             groupID = temp.groupID;
             prerequisiteID = temp.prerequisiteID;
-            if (withList && temp.prereqs != null)
-            {
+            if (withList && temp.prereqs != null) {
                 prereqs = temp.prereqs;
-            }
-            else
-            {
+            } else {
                 prereqs = null;
             }
         }
@@ -58,8 +52,7 @@ namespace Scheduler {
         #endregion
 
         #region Helper Function
-        public bool makeNewList()
-        {
+        public bool makeNewList() {
             prereqs = new List<CourseNode>();
             return true;
         }

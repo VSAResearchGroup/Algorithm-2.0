@@ -31,10 +31,8 @@ using System.Collections.Generic;
 using Newtonsoft.Json; //IMPORTANT: Used for translating the JSON strings into a usable format
 #endregion
 
-namespace Scheduler
-{
-    public class CourseNetwork
-    {
+namespace Scheduler {
+    public class CourseNetwork {
         #region Private Structures and Variables
         private string allCourses; //represents all the courses that are offered
         private string prereqs; //represents the prerequisites that exist for all courses
@@ -45,8 +43,7 @@ namespace Scheduler
         #region Constructor
         //Input parameter 1: the JSON string that represents all the courses
         //Input parameter 2: the JSON string that represents all the prerequisites
-        public CourseNetwork(string rawcourses, string rawpreqs)
-        {
+        public CourseNetwork(string rawcourses, string rawpreqs) {
             allCourses = rawcourses;
             prereqs = rawpreqs;
         }
@@ -60,8 +57,7 @@ namespace Scheduler
         //             Correct files and format were used to instantiate ALL_COURSES, and PRE_REQS
         //NOTE: Prerequisites added to their respective courses can occur in random order and should not be depended
         //      on for sequencing or sorting algorithms.
-        public void BuildNetwork()
-        {
+        public void BuildNetwork() {
             //Function Variables
             courseNetwork = JsonConvert.DeserializeObject<List<CourseNode>>(allCourses);
             List<CourseNode> smaller = JsonConvert.DeserializeObject<List<CourseNode>>(prereqs);
@@ -71,8 +67,7 @@ namespace Scheduler
             for (int i = 0; i < smaller.Count; i++) //iterates over the entire string of prerequisite information
             {
                 //Checks to see if the prereq object in the CourseNetwork-->CourseNode is empty
-                if (courseNetwork[courseIndex[smaller[i].courseID]].prereqs == null)
-                {
+                if (courseNetwork[courseIndex[smaller[i].courseID]].prereqs == null) {
                     courseNetwork[courseIndex[smaller[i].courseID]].prereqs = new List<CourseNode>();
                 }
 
@@ -87,18 +82,15 @@ namespace Scheduler
         //Assumptions: CourseID's are non-negative
         //Result: Creates a table whose index is a CourseID that exists in the CourseNetwork and whose value
         //        is the index of CourseNetwork where the CourseID resides. 
-        private void BuildIndex()
-        {
+        private void BuildIndex() {
             courseIndex = new List<int>();
 
             //Builds the Course Index to be used for O(1) access to information in CourseNetwork Object
             for (int i = 0; i < courseNetwork.Count; i++) //iterates over all the courses
             {
                 //Check to see if the CourseID is greater than the size of the Index table
-                if ((courseIndex.Count - 1) < courseNetwork[i].courseID)
-                {
-                    for (int j = courseIndex.Count - 1; j < courseNetwork[i].courseID; j++)
-                    {
+                if ((courseIndex.Count - 1) < courseNetwork[i].courseID) {
+                    for (int j = courseIndex.Count - 1; j < courseNetwork[i].courseID; j++) {
                         courseIndex.Add(-1); //Sets all newly added indices to -1 for error checking purposes
                     }
                     //Sets the value of the index to the index of the CourseNetwork object of the corresponding courseID
@@ -122,37 +114,30 @@ namespace Scheduler
         //          foo[0]->CourseID
         //          foo[1]->GroupID 1, Prereq[0]->prerequisite course, prereq[1]->2nd prerequisite course
         //Assumptions: The prerequisites (should they exist) of each course are in no particular order
-        public List<CourseNode> FindShortPath(int targetID)
-        {
+        public List<CourseNode> FindShortPath(int targetID) {
             List<CourseNode> targetCourse = new List<CourseNode>(); //creates object to be passed
             int index = courseIndex[targetID]; //Used for consistency and readability
 
             //check for valid course
-            if (index > -1)
-            {
+            if (index > -1) {
                 targetCourse.Add(new CourseNode()); //Adds first element: targetCourse[0]
                 targetCourse[0].courseID = targetID; //sets identifying course ID
 
                 //Checks if Course has prerequisites
-                if (courseNetwork[index].prereqs != null)
-                {
+                if (courseNetwork[index].prereqs != null) {
                     //iterates over prerequisites for coures
-                    for (int j = 0; j < courseNetwork[index].prereqs.Count; j++)
-                    {
+                    for (int j = 0; j < courseNetwork[index].prereqs.Count; j++) {
                         int groupPath = courseNetwork[index].prereqs[j].groupID; //For Consistency and readability
 
                         //Makes an index for each group path where the index is equal to the group ID
-                        if (groupPath > (targetCourse.Count - 1))
-                        {
-                            while ((targetCourse.Count - 1) < groupPath)
-                            {
+                        if (groupPath > (targetCourse.Count - 1)) {
+                            while ((targetCourse.Count - 1) < groupPath) {
                                 targetCourse.Add(new CourseNode());
                             }
                         }
 
                         //Checks to see if List object for the Group Course Node is empty 
-                        if (targetCourse[groupPath].prereqs == null)
-                        {
+                        if (targetCourse[groupPath].prereqs == null) {
                             targetCourse[groupPath].makeNewList();
                         }
 
@@ -162,9 +147,7 @@ namespace Scheduler
                         targetCourse[groupPath].prereqs.Add(new CourseNode(courseNetwork[index].prereqs[j], false));
                     }
                 }
-            }
-            else
-            {
+            } else {
                 return null; //Course Does Not Exist
             }
             return targetCourse;
@@ -173,27 +156,21 @@ namespace Scheduler
 
         #region Show Network
         //A Console output of the Course Network Object
-        public void ShowNetwork()
-        {
+        public void ShowNetwork() {
             //Iterates over the Course Network
-            for (int i = 0; i < courseNetwork.Count; i++)
-            {
+            for (int i = 0; i < courseNetwork.Count; i++) {
                 //Display Course Number
                 Console.Write("\t" + courseNetwork[i].courseID + ": ");
 
                 //Checks if Course has Prerequisite Courses
-                if (courseNetwork[i].prereqs == null)
-                {
+                if (courseNetwork[i].prereqs == null) {
                     Console.WriteLine("No Prerequisite Courses");
-                }
-                else
-                {
+                } else {
                     //Starts List of Prerequistes
                     Console.Write("Prerequisite Courses: ");
 
                     //Iterates over Course Node Prerequisite List
-                    for (int j = 0; j < courseNetwork[i].prereqs.Count; j++)
-                    {
+                    for (int j = 0; j < courseNetwork[i].prereqs.Count; j++) {
                         Console.Write(courseNetwork[i].prereqs[j].prerequisiteID + ", ");
                         //Console.Write(courseNetwork[i].prereqs[j].groupID + "; ");
                     }
@@ -205,39 +182,29 @@ namespace Scheduler
 
         #region Show Short List
         //Purpose Shows the prerequisite paths of a List of Course Node Objects
-        public void ShowShortList(List<CourseNode> targetList)
-        {
+        public void ShowShortList(List<CourseNode> targetList) {
             //Checks to see if targetList is valid
-            if (targetList != null)
-            {
+            if (targetList != null) {
                 //Checks to see if targetList has prerequisites in groupPaths
-                if (targetList.Count > 1)
-                {
+                if (targetList.Count > 1) {
                     //Course Information
                     Console.WriteLine("\tCourse " + targetList[0].courseID + " ");
                     //iterates over the targetList object
-                    for (int i = 1; i < targetList.Count; i++)
-                    {
+                    for (int i = 1; i < targetList.Count; i++) {
                         //Shows Group Information
-                        if (targetList[i].prereqs != null)
-                        {
+                        if (targetList[i].prereqs != null) {
                             Console.Write("\t\tGroup " + targetList[i].groupID + " Prerequisites: ");
                             //iterates over Prerequisite Object
-                            for (int j = 0; j < targetList[i].prereqs.Count; j++)
-                            {
+                            for (int j = 0; j < targetList[i].prereqs.Count; j++) {
                                 Console.Write(targetList[i].prereqs[j].prerequisiteID + "; ");
                             }
                             Console.WriteLine("");
                         }
                     }
-                }
-                else
-                {
+                } else {
                     Console.WriteLine("\tCourse " + targetList[0].courseID + " has no Prerequisites");
                 }
-            }
-            else
-            {
+            } else {
                 Console.WriteLine("\tCourse Does Not exist");
             }
 
