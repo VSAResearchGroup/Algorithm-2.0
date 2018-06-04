@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data;
+using System.IO;
 
 namespace Scheduler {
     class Scheduler {
@@ -30,6 +31,14 @@ namespace Scheduler {
             InitMachineNodes();
             InitMachines();
             InitYearTwo(); //temporary fix for the second year
+            InitNetwork();
+        }
+
+        private void InitNetwork() {
+            string rawcourses = File.ReadAllText("../../AllCourses.json");
+            string rawpreqs = File.ReadAllText("../../PrereqNetwork.json");
+            network = new CourseNetwork(rawcourses, rawpreqs);
+            network.BuildNetwork();
         }
 
         public ArrayList CreateSchedule() {
@@ -46,7 +55,7 @@ namespace Scheduler {
         private void ScheduleCourse(Job job) {
             int num = job.GetID();
             List<CourseNode> groups = network.FindShortPath(num);//find prerequisite group
-            if (groups.Count == 0 || job.GetPrerequisitesScheduled()) { //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
+            if (!PrereqsExist(groups) || job.GetPrerequisitesScheduled()) { //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
                 PutCourseOnMachine(job, groups);
                 return;
             } else {//schedule j's prerequisites by geting shortest group and whatnot
@@ -69,6 +78,15 @@ namespace Scheduler {
             return;
         }
 
+
+        private bool PrereqsExist(List<CourseNode> groups) {
+            for(int i = 0; i < groups.Count; i++) {
+                if(groups[i].prereqs != null) {
+                    return true;
+                }
+            }
+            return false;
+        }
         //preferences not implemented yet but this is where they would happen
 
         //HERE YOU WILL ALSO DETERMINE WHAT TO DO IF IT CANT BE SCHEDULED
@@ -78,7 +96,7 @@ namespace Scheduler {
             int mostRecentPrereqQuarter = 1;
             int start = 0;
             //if no prereqs then schedule at any time
-            if (groups.Count > 0) { //this is if there are prereqs
+            if (PrereqsExist(groups)) { //this is if there are prereqs
                 int[] yq = GetMostRecentPrereq(groups);
                 mostRecentPrereqYear = yq[0];
                 mostRecentPrereqQuarter = yq[1];
@@ -138,9 +156,11 @@ namespace Scheduler {
         }
 
         private int GetShortestGroup(List<CourseNode> groups) {
-            int shortest = 0;
-            for (int j = 1; j < groups.Count; j++) { //find the shortest group.
-                if (groups[j].prereqs.Count < shortest) {
+            int shortest = int.MaxValue;
+            for (int j = 0; j < groups.Count; j++) { //find the shortest group that is not null
+                List<CourseNode> p = new List<CourseNode>();
+                p=groups[j].prereqs;
+                if (groups[j].prereqs.Count < shortest && p != null) {
                     shortest = j;
                 }
             }//so now we have the shortest list
