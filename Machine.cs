@@ -45,7 +45,22 @@ namespace Scheduler {
         }
 
         public bool CanDoJob(Job job) {
-            return jobs.Contains(job);
+            for(int i = 0; i < jobs.Count; i++) {
+                Job j = (Job)jobs[i];
+                if(j == job) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool Equals(object obj) {
+            Machine j = obj as Machine;
+            if(j == null) {
+                return false;
+            } else {
+                return j == (Machine)obj;
+            }
         }
 
         public bool CheckInUse() {
@@ -107,6 +122,22 @@ namespace Scheduler {
                 Job j = (Job)jobs[i];
                 Console.WriteLine(j.GetID());
             }
+            Console.WriteLine("DayTimes:");
+            for (int i = 0; i < dateTime.Count; i++) {
+                DayTime dt = (DayTime)dateTime[i];
+                Console.WriteLine("Day: " + dt.GetDay());
+                Console.WriteLine("Start time: " + dt.GetStartTime());
+                Console.WriteLine("End time: " + dt.GetEndTime());
+            }
+            Console.WriteLine("-----------------------------------");
+        }
+
+        public void PrintBusyMachine() {
+            Console.WriteLine("-----------------------------------");
+            Console.WriteLine("Year: " + year);
+            Console.WriteLine("Quarter: " + quarter);
+            Console.WriteLine("Job:");
+            Console.WriteLine(currentJobProcessing.GetID());           
             Console.WriteLine("DayTimes:");
             for (int i = 0; i < dateTime.Count; i++) {
                 DayTime dt = (DayTime)dateTime[i];

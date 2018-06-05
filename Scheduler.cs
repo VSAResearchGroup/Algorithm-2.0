@@ -66,7 +66,7 @@ namespace Scheduler {
                 List<CourseNode> group = groups[shortest].prereqs;
                 ArrayList jobsToBeScheduled = new ArrayList();
                 for (int j = 0; j < group.Count; j++) {
-                    Job myJob = new Job(groups[j].courseID);
+                    Job myJob = new Job(group[j].prerequisiteID);
                     jobsToBeScheduled.Add(myJob);
                 }//now we have a list full of jobs to be scheduled
 
@@ -117,6 +117,8 @@ namespace Scheduler {
                         m.SetCurrentJobProcessing(j);
                         m.SetInUse(true);
                         j.SetScheduled(true);
+                        finalPlan.Add(m);
+                        break;
                     }
                 }
             }
@@ -157,10 +159,8 @@ namespace Scheduler {
 
         private int GetShortestGroup(List<CourseNode> groups) {
             int shortest = int.MaxValue;
-            for (int j = 0; j < groups.Count; j++) { //find the shortest group that is not null
-                List<CourseNode> p = new List<CourseNode>();
-                p=groups[j].prereqs;
-                if (groups[j].prereqs.Count < shortest && p != null) {
+            for (int j = 1; j < groups.Count; j++) { //find the shortest group that is not null
+                if (groups[j].prereqs.Count < shortest && groups[j].prereqs != null) {
                     shortest = j;
                 }
             }//so now we have the shortest list

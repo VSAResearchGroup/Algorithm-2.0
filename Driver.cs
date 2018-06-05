@@ -14,9 +14,24 @@ namespace Scheduler {
             ArrayList schedule = new ArrayList();
             Console.WriteLine("Scheduled following courses:");
             schedule = scheduler.CreateSchedule();
-            Console.WriteLine(schedule);
+
+            /*print all busy machines*/
+            for (int i = 0; i < schedule.Count; i++) {
+                ArrayList machines = (ArrayList)schedule[i];
+                for (int j = 0; j < machines.Count; j++) {
+                    Machine m = (Machine)machines[j];
+                    m.PrintBusyMachine();
+                }
+            }
+
+            /*print what couldn't be scheduled*/
             Console.WriteLine("Unable to schedule following courses:");
-            Console.WriteLine(scheduler.GetUnscheduledCourses());
+            ArrayList unScheduled = new ArrayList();
+            unScheduled = scheduler.GetUnscheduledCourses();
+            for (int i = 0; i < unScheduled.Count; i++) {
+                Job j = (Job)unScheduled[i];
+                Console.WriteLine(j.GetID());
+            }
             Console.ReadLine();
         }
     }
