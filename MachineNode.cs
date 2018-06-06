@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Scheduler {
     class MachineNode {
 
         private int creditsScheduled;
         private int majorCreditsScheduled;
-        private ArrayList machines;
+        private List<Machine> machines;
         private int year;
         private int quarter;
         private Preferences preferences;
@@ -18,13 +14,13 @@ namespace Scheduler {
         public MachineNode(int year, int quarter) {
             this.year = year;
             this.quarter = quarter;
-            machines = new ArrayList();
+            machines = new List<Machine>();
             creditsScheduled = 0;
             majorCreditsScheduled = 0;
             preferences = new Preferences();
         }
 
-        public MachineNode(ArrayList m, int year, int quarter, Preferences p) {
+        public MachineNode(List<Machine> m, int year, int quarter, Preferences p) {
             this.year = year;
             this.quarter = quarter;
             machines = m;
@@ -37,7 +33,7 @@ namespace Scheduler {
 
         public int GetQuarter() { return quarter; }
 
-        public ArrayList GetMachines() { return machines; }
+        public List<Machine> GetMachines() { return machines; }
 
         public int GetCreditsScheduled() {
             return creditsScheduled;
@@ -47,7 +43,7 @@ namespace Scheduler {
             return majorCreditsScheduled;
         }
 
-        public void AddMachine(int year, int quarter, ArrayList dateTime, ArrayList jobs) {
+        public void AddMachine(int year, int quarter, List<DayTime> dateTime, List<Job> jobs) {
             Machine m = new Machine(year, quarter, dateTime, jobs);
             machines.Add(m);
         }
@@ -64,7 +60,7 @@ namespace Scheduler {
         public void ScheduleMachine(Machine x, Job j) {
             if (machines.Contains(x)) {
                 int num = machines.IndexOf(x);
-                Machine m = (Machine)machines[num];
+                Machine m = machines[num];
                 if (!m.CheckInUse()) {
                     m.SetInUse(true);
                     m.SetCurrentJobProcessing(j);
@@ -77,16 +73,16 @@ namespace Scheduler {
         public void UnscheduleMachine(Machine x) {
             if(machines.Contains(x)) {
                 int num = machines.IndexOf(x);
-                Machine m = (Machine)machines[num];
+                Machine m = machines[num];
                 m.SetInUse(false);
                 m.SetCurrentJobProcessing(null);
             }
         }
 
-        public ArrayList GetAllScheduledMachines() {
-            ArrayList scheduledMachines = new ArrayList();
+        public List<Machine> GetAllScheduledMachines() {
+            List<Machine> scheduledMachines = new List<Machine>();
             for(int i = 0; i < machines.Count; i++ ) {
-                Machine m = (Machine)machines[i];
+                Machine m = machines[i];
                 if (m.CheckInUse()) scheduledMachines.Add(m);
             }
             return scheduledMachines;

@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Data.Sql;
 using System.Data.SqlClient;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data;
 using System.IO;
 
@@ -14,20 +9,20 @@ namespace Scheduler {
         SqlConnection myConnection;      //Declare the SQL connection to
 
         private CourseNetwork network;   //use Cashman network
-        private ArrayList machineNodes;
+        private List<MachineNode> machineNodes;
         private DegreePlan myPlan;       //pull from DB
-        private ArrayList finalPlan;     //output schedule
+        private List<Machine> finalPlan;     //output schedule
         private Preferences preferences;
-        private ArrayList completedPrior;//starting point
-        private ArrayList unableToSchedule;
+        private List<Job> completedPrior;//starting point
+        private List<Job> unableToSchedule;
 
         private const int QUARTERS = 4;
 
         public Scheduler() {
-            machineNodes = new ArrayList();
-            finalPlan = new ArrayList();
-            completedPrior = new ArrayList();
-            unableToSchedule = new ArrayList();
+            machineNodes = new List<MachineNode>();
+            finalPlan = new List<Machine>();
+            completedPrior = new List<Job>();
+            unableToSchedule = new List<Job>();
             InitMachineNodes();
             InitMachines();
             InitYearTwo(); //temporary fix for the second year
@@ -41,10 +36,10 @@ namespace Scheduler {
             network.BuildNetwork();
         }
 
-        public ArrayList CreateSchedule() {
-            ArrayList majorCourses = myPlan.GetList(0);
+        public List<Machine> CreateSchedule() {
+            List<Job> majorCourses = myPlan.GetList(0);
             for (int i = 0; i < majorCourses.Count; i++) {
-                Job job = (Job)majorCourses[i];
+                Job job = majorCourses[i];
                 ScheduleCourse(job);
             }
             finalPlan = GetBusyMachines();
@@ -62,17 +57,17 @@ namespace Scheduler {
                 //schedule j's prerequisites by geting shortest group and whatnot
                 int shortest = GetShortestGroup(groups);//so now we have the shortest list
                 List<CourseNode> group = groups[shortest].prereqs;
-                ArrayList jobsToBeScheduled = new ArrayList();
+                List<Job> jobsToBeScheduled = new List<Job>();
                 for (int j = 0; j < group.Count; j++) {
                     Job myJob = new Job(group[j].prerequisiteID);
                     jobsToBeScheduled.Add(myJob);
                 }//now we have a list full of jobs to be scheduled
 
                 for (int k = 0; k < jobsToBeScheduled.Count; k++) { //schedule them all here
-                    ScheduleCourse((Job)jobsToBeScheduled[k]);
+                    ScheduleCourse(jobsToBeScheduled[k]);
                 }//now they are scheduled
                 job.SetPrerequisitesScheduled(true);
-                
+
             }
             PutCourseOnMachine(job, groups);
             if (!job.GetScheduled()) { //figure out what to do if it wasn't able to be scheduled, make this a function later
@@ -81,8 +76,8 @@ namespace Scheduler {
         }
 
         private bool IsScheduled(Job j) {
-            for(int i = 0; i < finalPlan.Count; i++) {
-                Machine m = (Machine)finalPlan[i];
+            for (int i = 0; i < finalPlan.Count; i++) {
+                Machine m = finalPlan[i];
                 if (m.GetCurrentJobProcessing().GetID() == j.GetID()) {
                     return true;
                 }
@@ -92,8 +87,8 @@ namespace Scheduler {
 
 
         private bool PrereqsExist(List<CourseNode> groups) {
-            for(int i = 0; i < groups.Count; i++) {
-                if(groups[i].prereqs != null) {
+            for (int i = 0; i < groups.Count; i++) {
+                if (groups[i].prereqs != null) {
                     return true;
                 }
             }
@@ -121,10 +116,10 @@ namespace Scheduler {
 
             }
             for (int i = start; i < machineNodes.Count; i++) {
-                MachineNode mn = (MachineNode)machineNodes[i];
-                ArrayList machines = mn.GetMachines();
+                MachineNode mn = machineNodes[i];
+                List<Machine> machines = mn.GetMachines();
                 for (int k = 0; k < machines.Count; k++) {
-                    Machine m = (Machine)machines[k];
+                    Machine m = machines[k];
                     if (m.CanDoJob(j) && !m.CheckInUse()) { //if not in use and it can do the job
                         m.SetCurrentJobProcessing(j);
                         m.SetInUse(true);
@@ -136,7 +131,7 @@ namespace Scheduler {
                     }
                 }
             }
-            
+
         }
 
         //find by retrieving job and looking at when it was scheduled
@@ -148,8 +143,8 @@ namespace Scheduler {
             int mostRecentPrereqYear = -1;
             int mostRecentPrereqQuarter = -1;
             for (int i = 1; i < groups.Count; i++) {
-                for(int j = 0; j < finalPlan.Count; j++) {
-                    Machine m = (Machine)finalPlan[j];
+                for (int j = 0; j < finalPlan.Count; j++) {
+                    Machine m = finalPlan[j];
                     if (m.GetCurrentJobProcessing() is null || groups[i].prereqs[0] is null) continue;
 
                     if (m.GetCurrentJobProcessing().GetID() == groups[i].prereqs[0].prerequisiteID) { //found the course
@@ -162,7 +157,7 @@ namespace Scheduler {
                     }
                 }
             }
-            return  new int[] { mostRecentPrereqYear, mostRecentPrereqQuarter};
+            return new int[] { mostRecentPrereqYear, mostRecentPrereqQuarter };
         }
 
         private int GetShortestGroup(List<CourseNode> groups) {
@@ -183,10 +178,10 @@ namespace Scheduler {
             }
             //transfer all the same classes to the set of machine nodes
             for (int i = 4; i < 8; i++) {
-                MachineNode oldMn = (MachineNode)machineNodes[i - 4];
-                MachineNode newMn = (MachineNode)machineNodes[i];
+                MachineNode oldMn = machineNodes[i - 4];
+                MachineNode newMn = machineNodes[i];
                 for (int j = 0; j < oldMn.GetMachines().Count; j++) {
-                    Machine oldMachine = (Machine)oldMn.GetMachines()[j];
+                    Machine oldMachine = oldMn.GetMachines()[j];
                     Machine newMachine = new Machine(oldMachine);
                     newMachine.SetYear(1);
                     newMn.AddMachine(newMachine);
@@ -266,16 +261,14 @@ namespace Scheduler {
                 //we add a new machine when we peek to the next row and see
                 //(different course) OR (same course and (different section OR dif qtr))
                 if (dt_size == 0 || ((int)dt.Rows[dt_size - 1].ItemArray[0] != currentCourse ||
-                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter)
-                    )
-                    ) {
+                    ((int)dt.Rows[dt_size - 1].ItemArray[0] == currentCourse && ((int)dt.Rows[dt_size - 1].ItemArray[5] != currentSection) || (int)dt.Rows[dt_size - 1].ItemArray[4] != currentQuarter))) {
                     dummyMachine.AddJob(new Job(course));
                     for (int i = 0; i < machineNodes.Count; i++) {
-                        MachineNode mn = (MachineNode)machineNodes[i];
-                        ArrayList machines = mn.GetMachines();
+                        MachineNode mn = machineNodes[i];
+                        List<Machine> machines = mn.GetMachines();
                         if (machines.Count > 0) {
                             for (int j = 0; j < machines.Count; j++) {
-                                Machine m = (Machine)machines[j];
+                                Machine m = machines[j];
                                 if (m == dummyMachine) { //found the machine, just add job
                                     m.AddJob(new Job(course));
                                 } else if (dummyMachine.GetYear().Equals(mn.GetYear()) && dummyMachine.GetQuarter().Equals(mn.GetQuarter())) { //machine does not exist, add it in
@@ -299,11 +292,11 @@ namespace Scheduler {
             }
             //print machines for testing
             for (int i = 0; i < machineNodes.Count; i++) {
-                MachineNode mn = (MachineNode)machineNodes[i];
-                ArrayList machines = mn.GetMachines();
+                MachineNode mn = machineNodes[i];
+                List<Machine> machines = mn.GetMachines();
                 Console.WriteLine("Quarter: " + mn.GetQuarter());
                 for (int j = 0; j < machines.Count; j++) {
-                    Machine m = (Machine)machines[j];
+                    Machine m = machines[j];
                     m.Print();
                 }
             }
@@ -333,7 +326,7 @@ namespace Scheduler {
             string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
                             + majorID + " and SchoolID = " + schoolID + " order by CourseID ASC ";
             DataTable dt = ExecuteQuery(query);
-            ArrayList courseNums = new ArrayList();
+            List<Job> courseNums = new List<Job>();
             foreach (DataRow row in dt.Rows) {
                 Job job = new Job((int)row.ItemArray[0]);
                 courseNums.Add(job);
@@ -370,16 +363,18 @@ namespace Scheduler {
             preferences.AddPreference("STARTING_QUARTER", 2);
         }
 
-        private ArrayList GetBusyMachines() {
-            ArrayList busy = new ArrayList();
+        private List<Machine> GetBusyMachines() {
+            List<Machine> busy = new List<Machine>();
             for (int i = 0; i < machineNodes.Capacity; i++) {
-                MachineNode mn = (MachineNode)machineNodes[i];
-                busy.Add(mn.GetAllScheduledMachines());
+                List<Machine> machines = machineNodes[i].GetAllScheduledMachines();
+                for (int j = 0; j < machines.Count; j++) {
+                    busy.Add(machines[j]);
+                }
             }
             return busy;
         }
 
-        public ArrayList GetUnscheduledCourses() {
+        public List<Job> GetUnscheduledCourses() {
             return unableToSchedule;
         }
 

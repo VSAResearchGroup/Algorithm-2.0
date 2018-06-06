@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Scheduler {
     class Machine {
@@ -11,20 +8,20 @@ namespace Scheduler {
         private bool inUse;
         private int year;
         private int quarter;
-        private ArrayList jobs;
+        private List<Job> jobs;
         private Job currentJobProcessing;
-        private ArrayList dateTime; //datetimes from class?
+        private List<DayTime> dateTime; //datetimes from class?
 
         public Machine() {
             this.year = 0;
             this.quarter = 0;
-            dateTime = new ArrayList();
-            this.jobs = new ArrayList();
+            dateTime = new List<DayTime>();
+            this.jobs = new List<Job>();
             inUse = false;
             currentJobProcessing = null;
         }
 
-        public Machine(int year, int quarter, ArrayList dt, ArrayList jobs) {
+        public Machine(int year, int quarter, List<DayTime> dt, List<Job> jobs) {
             this.year = year;
             this.quarter = quarter;
             dateTime = dt;
@@ -36,9 +33,9 @@ namespace Scheduler {
         public Machine(Machine m) {
             this.year = m.year;
             this.quarter = m.quarter;
-            dateTime = new ArrayList();
+           // dateTime = new List<DayTime>();
             dateTime = m.dateTime;
-            this.jobs = new ArrayList();
+            //this.jobs = new List<Job>();
             jobs = m.jobs;
             inUse = false;
             currentJobProcessing = null;
@@ -46,8 +43,7 @@ namespace Scheduler {
 
         public bool CanDoJob(Job job) {
             for(int i = 0; i < jobs.Count; i++) {
-                Job j = (Job)jobs[i];
-                if(j == job) {
+                if(jobs[i] == job) {
                     return true;
                 }
             }
@@ -59,7 +55,7 @@ namespace Scheduler {
             if(j == null) {
                 return false;
             } else {
-                return j == (Machine)obj;
+                return j == this;
             }
         }
 
@@ -103,7 +99,7 @@ namespace Scheduler {
             currentJobProcessing = s;
         }
 
-        public ArrayList GetDateTime() {
+        public List<DayTime> GetDateTime() {
             return dateTime;
         }
 
@@ -119,12 +115,12 @@ namespace Scheduler {
             Console.WriteLine("Quarter: " + quarter);
             Console.WriteLine("Jobs:");
             for (int i = 0; i < jobs.Count; i++) {
-                Job j = (Job)jobs[i];
+                Job j = jobs[i];
                 Console.WriteLine(j.GetID());
             }
             Console.WriteLine("DayTimes:");
             for (int i = 0; i < dateTime.Count; i++) {
-                DayTime dt = (DayTime)dateTime[i];
+                DayTime dt = dateTime[i];
                 Console.WriteLine("Day: " + dt.GetDay());
                 Console.WriteLine("Start time: " + dt.GetStartTime());
                 Console.WriteLine("End time: " + dt.GetEndTime());
@@ -140,7 +136,7 @@ namespace Scheduler {
             Console.WriteLine(currentJobProcessing.GetID());           
             Console.WriteLine("DayTimes:");
             for (int i = 0; i < dateTime.Count; i++) {
-                DayTime dt = (DayTime)dateTime[i];
+                DayTime dt = dateTime[i];
                 Console.WriteLine("Day: " + dt.GetDay());
                 Console.WriteLine("Start time: " + dt.GetStartTime());
                 Console.WriteLine("End time: " + dt.GetEndTime());
@@ -148,9 +144,9 @@ namespace Scheduler {
             Console.WriteLine("-----------------------------------");
         }
 
-        private bool ContainsDayTime(ArrayList times, DayTime dt) {
+        private bool ContainsDayTime(List<DayTime> times, DayTime dt) {
             for(int i = 0; i < times.Count; i++) {
-                DayTime time = (DayTime)times[i];
+                DayTime time = times[i];
                 if(time == dt) {
                     return true;
                 }
@@ -164,7 +160,7 @@ namespace Scheduler {
                 return false;
             }
             for (int i = 0; i < thism.dateTime.Count; i++) {
-                if (!thism.ContainsDayTime(thism.dateTime, (DayTime)right.dateTime[i])) {
+                if (!thism.ContainsDayTime(thism.dateTime, right.dateTime[i])) {
                     return false;
                 }
             }
