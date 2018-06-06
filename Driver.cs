@@ -10,7 +10,7 @@ namespace Scheduler {
         static void Main(string[] args) {
             Scheduler scheduler = new Scheduler();
             scheduler.MakeStartingPoint("nothing yet");
-            scheduler.InitDegreePlan(16, 2); //get this from UI later
+            scheduler.InitDegreePlan(22, 6); //get this from UI later
             ArrayList schedule = new ArrayList();
             Console.WriteLine("Scheduled following courses:");
             schedule = scheduler.CreateSchedule();

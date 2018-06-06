@@ -53,15 +53,13 @@ namespace Scheduler {
 
         //make it similar to depth first search?
         private void ScheduleCourse(Job job) {
+            if (IsScheduled(job)) {
+                return;
+            }
             int num = job.GetID();
             List<CourseNode> groups = network.FindShortPath(num);//find prerequisite group
-            if (!PrereqsExist(groups) || job.GetPrerequisitesScheduled()) { //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
-                PutCourseOnMachine(job, groups);
-                return;
-            } else {//schedule j's prerequisites by geting shortest group and whatnot
-                if (job.GetScheduled()) {
-                    return;
-                }
+            if (PrereqsExist(groups) && !job.GetPrerequisitesScheduled()) { //if j does not have prerequisites (OR its prerequisites have been scheduled) schedule j  
+                //schedule j's prerequisites by geting shortest group and whatnot
                 int shortest = GetShortestGroup(groups);//so now we have the shortest list
                 List<CourseNode> group = groups[shortest].prereqs;
                 ArrayList jobsToBeScheduled = new ArrayList();
@@ -74,8 +72,22 @@ namespace Scheduler {
                     ScheduleCourse((Job)jobsToBeScheduled[k]);
                 }//now they are scheduled
                 job.SetPrerequisitesScheduled(true);
+                
             }
-            return;
+            PutCourseOnMachine(job, groups);
+            if (!job.GetScheduled()) { //figure out what to do if it wasn't able to be scheduled, make this a function later
+                unableToSchedule.Add(job);
+            }
+        }
+
+        private bool IsScheduled(Job j) {
+            for(int i = 0; i < finalPlan.Count; i++) {
+                Machine m = (Machine)finalPlan[i];
+                if (m.GetCurrentJobProcessing().GetID() == j.GetID()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -117,14 +129,14 @@ namespace Scheduler {
                         m.SetCurrentJobProcessing(j);
                         m.SetInUse(true);
                         j.SetScheduled(true);
+                        j.SetQuarterScheduled(m.GetQuarter());
+                        j.SetYearScheduled(m.GetYear());
                         finalPlan.Add(m);
-                        break;
+                        return;
                     }
                 }
             }
-            if (!j.GetScheduled()) { //figure out what to do if it wasn't able to be scheduled
-                unableToSchedule.Add(j);  
-            }
+            
         }
 
         //find by retrieving job and looking at when it was scheduled
@@ -132,29 +144,25 @@ namespace Scheduler {
         //this algorithm should be optimized for speed. right now it is just doing a linear search
         // n times where n is the number of prerequisites
         private int[] GetMostRecentPrereq(List<CourseNode> groups) {
-            int[] yq = new int[2];
+            //int[] yq = new int[2];
             int mostRecentPrereqYear = -1;
             int mostRecentPrereqQuarter = -1;
-            for (int i = 0; i < groups.Count; i++) {
-                for (int k = 0; k < machineNodes.Count; k++) {
-                    MachineNode mn = (MachineNode)machineNodes[k];
-                    ArrayList machines = mn.GetMachines();
-                    for (int j = 0; j < machines.Count; j++) {
-                        Machine m = (Machine)machines[j];
-                        if(m.GetCurrentJobProcessing().GetID() == groups[i].courseID) { //found the course
-                            if(m.GetCurrentJobProcessing().GetYearScheduled() > mostRecentPrereqYear ||
-                                (m.GetCurrentJobProcessing().GetYearScheduled() == mostRecentPrereqYear &&
-                                m.GetCurrentJobProcessing().GetQuarterScheduled() > mostRecentPrereqQuarter) ) { //now check if it is more recent
-                                mostRecentPrereqYear = m.GetCurrentJobProcessing().GetYearScheduled();
-                                mostRecentPrereqQuarter = m.GetCurrentJobProcessing().GetQuarterScheduled();
-                            }
+            for (int i = 1; i < groups.Count; i++) {
+                for(int j = 0; j < finalPlan.Count; j++) {
+                    Machine m = (Machine)finalPlan[j];
+                    if (m.GetCurrentJobProcessing() is null || groups[i].prereqs[0] is null) continue;
+
+                    if (m.GetCurrentJobProcessing().GetID() == groups[i].prereqs[0].prerequisiteID) { //found the course
+                        if (m.GetCurrentJobProcessing().GetYearScheduled() > mostRecentPrereqYear ||
+                            (m.GetCurrentJobProcessing().GetYearScheduled() == mostRecentPrereqYear &&
+                            m.GetCurrentJobProcessing().GetQuarterScheduled() > mostRecentPrereqQuarter)) { //now check if it is more recent
+                            mostRecentPrereqYear = m.GetCurrentJobProcessing().GetYearScheduled();
+                            mostRecentPrereqQuarter = m.GetCurrentJobProcessing().GetQuarterScheduled();
                         }
                     }
                 }
             }
-            yq[0] = mostRecentPrereqYear;
-            yq[1] = mostRecentPrereqQuarter;
-            return yq;
+            return  new int[] { mostRecentPrereqYear, mostRecentPrereqQuarter};
         }
 
         private int GetShortestGroup(List<CourseNode> groups) {
@@ -323,7 +331,7 @@ namespace Scheduler {
 
         public void InitDegreePlan(int majorID, int schoolID) {//query admissionrequiredcourses
             string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
-                            + majorID + " and SchoolID = " + schoolID + " ; ";
+                            + majorID + " and SchoolID = " + schoolID + " order by CourseID ASC ";
             DataTable dt = ExecuteQuery(query);
             ArrayList courseNums = new ArrayList();
             foreach (DataRow row in dt.Rows) {
