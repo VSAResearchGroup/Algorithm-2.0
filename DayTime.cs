@@ -22,7 +22,7 @@ namespace Scheduler {
             end_time = et;
         }
 
-        public int GetDay() { return day; } 
+        public int GetDay() { return day; }
         public int GetStartTime() { return start_time; }
         public int GetEndTime() { return end_time; }
 
@@ -37,7 +37,7 @@ namespace Scheduler {
         }
 
         public static bool operator ==(DayTime thism, DayTime right) {
-            if (thism.day != right.day || thism.start_time != right.start_time 
+            if (thism.day != right.day || thism.start_time != right.start_time
                 || thism.end_time != right.end_time) {
                 return false;
             }

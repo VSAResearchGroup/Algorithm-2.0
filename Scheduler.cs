@@ -107,6 +107,10 @@ namespace Scheduler {
                 int[] yq = GetMostRecentPrereq(groups);
                 mostRecentPrereqYear = yq[0];
                 mostRecentPrereqQuarter = yq[1];
+                if (mostRecentPrereqQuarter == -1 || mostRecentPrereqYear == -1) { //has prerequisites but they weren't able to be scheduled
+                    unableToSchedule.Add(j);
+                    return;
+                }
 
                 //schedule 1 or more quarters after, mind the year
                 //schedule on nearest available machine
@@ -117,21 +121,78 @@ namespace Scheduler {
             }
             for (int i = start; i < machineNodes.Count; i++) {
                 MachineNode mn = machineNodes[i];
+                //if machine node exeeds preferences continue to next node
+                if (mn.GetClassesScheduled() > 3) {
+                    continue;
+                }
                 List<Machine> machines = mn.GetMachines();
                 for (int k = 0; k < machines.Count; k++) {
                     Machine m = machines[k];
                     if (m.CanDoJob(j) && !m.CheckInUse()) { //if not in use and it can do the job
+                        if (Overlap(j, m, mn)) { //can't schedule it if the times overlap even if machine found
+                            continue;
+                        }
                         m.SetCurrentJobProcessing(j);
                         m.SetInUse(true);
                         j.SetScheduled(true);
                         j.SetQuarterScheduled(m.GetQuarter());
                         j.SetYearScheduled(m.GetYear());
+                        mn.AddClassesScheduled(1);
                         finalPlan.Add(m);
                         return;
                     }
                 }
             }
+        }
 
+        //check to see if a job overlaps with another job's times in a single MachineNode
+        private bool Overlap(Job j, Machine goal, MachineNode mn) {
+            bool flag = false;
+            //need list of all the start and end times from goal
+            List<DayTime> dt = goal.GetDateTime();
+            List<Machine> myMachines = mn.GetAllScheduledMachines();
+            for (int i = 0; i < myMachines.Count; i++) {
+                Machine m = myMachines[i];
+                List<DayTime> tempDT = m.GetDateTime();
+                if(dt.Count==tempDT.Count) {
+                    for (int k = 0; k < dt.Count; k++) {
+                        if ((dt[k].GetStartTime() >= tempDT[k].GetStartTime() && dt[k].GetStartTime() <= tempDT[k].GetEndTime()) ||
+                        (dt[k].GetEndTime() >= tempDT[k].GetStartTime() && dt[k].GetEndTime() <= tempDT[k].GetEndTime())) {
+                            return true;
+                        }
+                    }
+                } else {
+                    int min = Math.Min(dt.Count, tempDT.Count);
+                    if(dt.Count == min) {
+                        flag = compareDays(dt, tempDT);
+                    } else {
+                        flag = compareDays(tempDT, dt);
+                    }
+                    if(flag) {
+                        return flag;
+                    }
+                }
+            }
+            return flag;
+        }
+
+        private bool compareDays(List<DayTime> smaller, List<DayTime> larger) {
+            for (int k = 0; k < smaller.Count; k++) {// go through all days in smaller
+                int smallDay = smaller[k].GetDay(); //get day from smaller
+                    int largeDayIndex = -1;
+                for (int j =0; j < larger.Count; j++) { //find that day in larger
+                    if(larger[j].GetDay() == smallDay) {
+                        largeDayIndex = j;
+                        break;
+                    }
+                }
+                //compare that day
+                if ((smaller[k].GetStartTime() >= larger[largeDayIndex].GetStartTime() && smaller[k].GetStartTime() <= larger[largeDayIndex].GetEndTime()) ||
+                (smaller[k].GetEndTime() >= larger[largeDayIndex].GetStartTime() && smaller[k].GetEndTime() <= larger[largeDayIndex].GetEndTime())) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         //find by retrieving job and looking at when it was scheduled

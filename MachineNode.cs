@@ -10,6 +10,7 @@ namespace Scheduler {
         private int year;
         private int quarter;
         private Preferences preferences;
+        private int classesScheduled;
 
         public MachineNode(int year, int quarter) {
             this.year = year;
@@ -17,6 +18,7 @@ namespace Scheduler {
             machines = new List<Machine>();
             creditsScheduled = 0;
             majorCreditsScheduled = 0;
+            classesScheduled = 0;
             preferences = new Preferences();
         }
 
@@ -37,6 +39,14 @@ namespace Scheduler {
 
         public int GetCreditsScheduled() {
             return creditsScheduled;
+        }
+        //temporary
+        public int GetClassesScheduled() {
+            return classesScheduled;
+        }
+        //temporary
+        public void AddClassesScheduled(int k) {
+            classesScheduled += k;
         }
 
         public int GetMajorCreditsScheduled() {

@@ -33,9 +33,7 @@ namespace Scheduler {
         public Machine(Machine m) {
             this.year = m.year;
             this.quarter = m.quarter;
-           // dateTime = new List<DayTime>();
             dateTime = m.dateTime;
-            //this.jobs = new List<Job>();
             jobs = m.jobs;
             inUse = false;
             currentJobProcessing = null;
@@ -57,6 +55,22 @@ namespace Scheduler {
             } else {
                 return j == this;
             }
+        }
+
+        public List<int> GetStartTimes() {
+            List<int> start = new List<int>();
+            for (int i = 0; i < dateTime.Count; i++) {
+                start.Add(dateTime[i].GetStartTime());
+            }
+            return start;
+        }
+
+        public List<int> GetEndTimes() {
+            List<int> end = new List<int>();
+            for (int i = 0; i < dateTime.Count; i++) {
+                end.Add(dateTime[i].GetStartTime());
+            }
+            return end;
         }
 
         public bool CheckInUse() {
