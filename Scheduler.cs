@@ -9,15 +9,21 @@ namespace Scheduler {
         SqlConnection myConnection;      //Declare the SQL connection to
 
         private CourseNetwork network;   //use Cashman network
-        private List<MachineNode> machineNodes;
+        private List<MachineNode> machineNodes; //representing each quarter
         private DegreePlan myPlan;       //pull from DB
-        private List<Machine> finalPlan;     //output schedule
-        private Preferences preferences;
-        private List<Job> completedPrior;//starting point
-        private List<Job> unableToSchedule;
+        private List<Machine> finalPlan; //output schedule
+        private Preferences preferences; //currently hard coded, take from UI later
+        private List<Job> completedPrior;//starting point, not implemented currently
+        private List<Job> unableToSchedule;//list of courses that didn't fit into the schedule
 
         private const int QUARTERS = 4;
 
+
+        //------------------------------------------------------------------------------
+        // 
+        // default constructor
+        // 
+        //------------------------------------------------------------------------------
         public Scheduler() {
             machineNodes = new List<MachineNode>();
             finalPlan = new List<Machine>();
@@ -29,6 +35,11 @@ namespace Scheduler {
             InitNetwork();
         }
 
+        //------------------------------------------------------------------------------
+        // 
+        // initiates Andrue Cashman's network
+        // 
+        //------------------------------------------------------------------------------
         private void InitNetwork() {
             string rawcourses = File.ReadAllText("../../AllCourses.json");
             string rawpreqs = File.ReadAllText("../../PrereqNetwork.json");
@@ -36,6 +47,11 @@ namespace Scheduler {
             network.BuildNetwork();
         }
 
+        //------------------------------------------------------------------------------
+        // 
+        // creates schedule by looping through all the major courses
+        // 
+        //------------------------------------------------------------------------------
         public List<Machine> CreateSchedule() {
             List<Job> majorCourses = myPlan.GetList(0);
             for (int i = 0; i < majorCourses.Count; i++) {
@@ -46,7 +62,12 @@ namespace Scheduler {
             return finalPlan;
         }
 
-        //make it similar to depth first search?
+        
+        //------------------------------------------------------------------------------
+        // similar to depth first search algorithm. Does the action of searching through
+        // network and scheduling prerequisites before scheduling the class
+        // 
+        //------------------------------------------------------------------------------
         private void ScheduleCourse(Job job) {
             if (IsScheduled(job)) {
                 return;
@@ -75,6 +96,11 @@ namespace Scheduler {
             }
         }
 
+        //------------------------------------------------------------------------------
+        // checks if a course is already scheduled. Because courses are returned as 
+        // numbers from Cashman network and not Job type, we can't check for the 
+        // instance, we have to find it
+        //------------------------------------------------------------------------------
         private bool IsScheduled(Job j) {
             for (int i = 0; i < finalPlan.Count; i++) {
                 Machine m = finalPlan[i];
@@ -85,7 +111,11 @@ namespace Scheduler {
             return false;
         }
 
-
+        //------------------------------------------------------------------------------
+        // checks if prerequisite exists; this function can be eliminated, I just didn't
+        // quite understand why cashman network had so many lists of lists.
+        // 
+        //------------------------------------------------------------------------------
         private bool PrereqsExist(List<CourseNode> groups) {
             for (int i = 0; i < groups.Count; i++) {
                 if (groups[i].prereqs != null) {
@@ -94,9 +124,13 @@ namespace Scheduler {
             }
             return false;
         }
-        //preferences not implemented yet but this is where they would happen
 
-        //HERE YOU WILL ALSO DETERMINE WHAT TO DO IF IT CANT BE SCHEDULED
+        //------------------------------------------------------------------------------
+        // does the actual action of putting a course on a machine; this will be the hub
+        // for implementing preferences, not all are implemented at the moment; also,
+        // right now unscheduled courses are simply going into a list but if you were to 
+        // do something else, this function is where it would originate
+        //------------------------------------------------------------------------------
         private void PutCourseOnMachine(Job j, List<CourseNode> groups) {
             //get most recent prereq
             int mostRecentPrereqYear = 0;
@@ -145,7 +179,11 @@ namespace Scheduler {
             }
         }
 
-        //check to see if a job overlaps with another job's times in a single MachineNode
+        //------------------------------------------------------------------------------
+        // 
+        // check to see if a job overlaps with another job's times in a single 
+        // MachineNode; can't be in 2 places at once you know?
+        //------------------------------------------------------------------------------
         private bool Overlap(Job j, Machine goal, MachineNode mn) {
             bool flag = false;
             //need list of all the start and end times from goal
@@ -176,6 +214,11 @@ namespace Scheduler {
             return flag;
         }
 
+        //------------------------------------------------------------------------------
+        // helper function for overlap. it's pretty tricky to compare the lists when
+        // they are not the same length because of nulls and out of ranges. Can be 
+        // eliminated with a more clever algorithm that works of any size lists
+        //------------------------------------------------------------------------------
         private bool compareDays(List<DayTime> smaller, List<DayTime> larger) {
             for (int k = 0; k < smaller.Count; k++) {// go through all days in smaller
                 int smallDay = smaller[k].GetDay(); //get day from smaller
@@ -195,12 +238,12 @@ namespace Scheduler {
             return false;
         }
 
-        //find by retrieving job and looking at when it was scheduled
-        //only called if the job actually has prerequisites
-        //this algorithm should be optimized for speed. right now it is just doing a linear search
-        // n times where n is the number of prerequisites
+        //------------------------------------------------------------------------------
+        // find by retrieving job and looking at when it was scheduled
+        // only called if the job actually has prerequisites
+        // 
+        //------------------------------------------------------------------------------
         private int[] GetMostRecentPrereq(List<CourseNode> groups) {
-            //int[] yq = new int[2];
             int mostRecentPrereqYear = -1;
             int mostRecentPrereqQuarter = -1;
             for (int i = 1; i < groups.Count; i++) {
@@ -221,6 +264,11 @@ namespace Scheduler {
             return new int[] { mostRecentPrereqYear, mostRecentPrereqQuarter };
         }
 
+        //------------------------------------------------------------------------------
+        // if for course A you have to take [B, F, K] OR [J, Z], we pick the latter
+        // option because we don't want to take a lot of classes; in the long run,
+        // this is not always the fastest option so this can be optimized
+        //------------------------------------------------------------------------------
         private int GetShortestGroup(List<CourseNode> groups) {
             int shortest = int.MaxValue;
             for (int j = 1; j < groups.Count; j++) { //find the shortest group that is not null
@@ -231,6 +279,11 @@ namespace Scheduler {
             return shortest;
         }
 
+        //------------------------------------------------------------------------------
+        // temporary until we have more data, better data
+        // 
+        // 
+        //------------------------------------------------------------------------------
         private void InitYearTwo() {
             //init more machine nodes for the next year
             for (int i = 1; i <= QUARTERS; i++) {
@@ -250,6 +303,11 @@ namespace Scheduler {
             }
         }
 
+        //------------------------------------------------------------------------------
+        // initializes machineNodes
+        // 
+        // 
+        //------------------------------------------------------------------------------
         private void InitMachineNodes() {
             for (int i = 1; i <= QUARTERS; i++) {
                 MachineNode m = new MachineNode(0, i);
@@ -257,19 +315,11 @@ namespace Scheduler {
             }
         }
 
-        /*  
-         BIG DATABASE MACHINES ASSUMPTION: each course is entered continuosly. For example,
-         course 1 has DayTimes of A, B and C. Course 2 had DayTimes of D, E, and F.
-         OK: ABCDEF, NOT OK: ABDCEF or any other combo
-
-            this is ok as long as the query makes it that way, you cannot assume that in the database it will 
-            be entered that way. MAKE SURE YOU DO SOMETHING LIKE GROUP BY AND TEST IT!!!
-             */
-
-
-        //create a query that will pull all the different machines
-        //which means getting every single time slot
-        //distinct year, quarter, time, and set of DayTimes
+        //------------------------------------------------------------------------------
+        // create a query that will pull all the different machines
+        // which means getting every single time slot
+        // distinct year, quarter, time, and set of DayTimes
+        //------------------------------------------------------------------------------
         private void InitMachines() {
             string query = "select CourseID, StartTimeID, EndTimeID, DayID, QuarterID, SectionID from CourseTime order by CourseID ASC;";
             DataTable dt = ExecuteQuery(query);
@@ -296,7 +346,6 @@ namespace Scheduler {
                     dt_size--;
                     continue;
                 }
-
 
                 course = (int)dr.ItemArray[0];
                 section = (int)dr.ItemArray[5];
@@ -351,7 +400,7 @@ namespace Scheduler {
                 }
                 dt_size--;
             }
-            //print machines for testing
+            //print machines for testing; unnecessary
             for (int i = 0; i < machineNodes.Count; i++) {
                 MachineNode mn = machineNodes[i];
                 List<Machine> machines = mn.GetMachines();
@@ -363,10 +412,20 @@ namespace Scheduler {
             }
         }
 
+        //------------------------------------------------------------------------------
+        // to be implemented when we can take in courses from the UI that the user has
+        // taken. we simply skip taking that course in "putcourseonmachine" or
+        // something
+        //------------------------------------------------------------------------------
         public void MakeStartingPoint(string s) {
 
         }
 
+        //------------------------------------------------------------------------------
+        // concise code to execute queries
+        // 
+        // 
+        //------------------------------------------------------------------------------
         private DataTable ExecuteQuery(string query) {
             OpenSQLConnection();
             SqlCommand cmd = new SqlCommand(query, myConnection);
@@ -383,7 +442,12 @@ namespace Scheduler {
             return dt;
         }
 
-        public void InitDegreePlan(int majorID, int schoolID) {//query admissionrequiredcourses
+        //------------------------------------------------------------------------------
+        // retrieves the degree plan we seek. input hard coded from the driver but in 
+        // the future it should be taken from the UI. 
+        // query admissionrequiredcourses
+        //------------------------------------------------------------------------------
+        public void InitDegreePlan(int majorID, int schoolID) {
             string query = "select CourseID from AdmissionRequiredCourses where MajorID ="
                             + majorID + " and SchoolID = " + schoolID + " order by CourseID ASC ";
             DataTable dt = ExecuteQuery(query);
@@ -395,7 +459,11 @@ namespace Scheduler {
             myPlan = new DegreePlan(courseNums);
         }
 
-
+        //------------------------------------------------------------------------------
+        // sql connection
+        // 
+        // 
+        //------------------------------------------------------------------------------
         private void OpenSQLConnection() {
             myConnection = new SqlConnection(@"Data Source=(localdb)\MyLocalDB;Initial Catalog=myVirtualSupportAvisor;Integrated Security=True");
         }
@@ -412,8 +480,19 @@ namespace Scheduler {
             •	starting quarter of plan. [1,2,3,4]  (WILL IMPLEMENT THIS QUARTER)
 
         */
-
-        //hard coded now, take from UI later
+        //------------------------------------------------------------------------------
+        // hard coded now, take from UI later
+        //•	Being scheduled during the summer(NOT IMPLEMENTED)
+        //•	Maximum number of core courses per quarter(NOT IMPLEMENTED)
+        //•	How many quarters you’d like to spread the plan over(MAX of 16)
+        //                                                         (NOT IMPLEMENTED)
+        //•	Time interval for when a person is available to go to
+        //               class. For example, they are available 8AM-1PM.
+        //              LOOK AT TABLE TimeSlot(NOT IMPLEMENTED)
+        //•	Credits they would like to take per quarter.   (IMPLEMENTED)
+        //•	starting quarter of plan. [1,2,3,4]  (NOT IMPLEMENTED)
+        // 
+        //------------------------------------------------------------------------------
         private void CreatePreferences() {
             preferences = new Preferences();
             preferences.AddPreference("SUMMER", false);
@@ -424,6 +503,10 @@ namespace Scheduler {
             preferences.AddPreference("STARTING_QUARTER", 2);
         }
 
+        //------------------------------------------------------------------------------
+        // PASSES busy machines to driver as final plan. in the future, it will be
+        // serialized and passed to UI
+        //------------------------------------------------------------------------------
         private List<Machine> GetBusyMachines() {
             List<Machine> busy = new List<Machine>();
             for (int i = 0; i < machineNodes.Capacity; i++) {
@@ -435,6 +518,10 @@ namespace Scheduler {
             return busy;
         }
 
+        //------------------------------------------------------------------------------
+        // PASSES unscheduled machines to driver as final plan. in the future, it will 
+        // be serialized and passed to UI
+        //------------------------------------------------------------------------------
         public List<Job> GetUnscheduledCourses() {
             return unableToSchedule;
         }

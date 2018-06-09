@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 
 namespace Scheduler {
     class Driver {
+        //------------------------------------------------------------------------------
+        // the driver hard codes some of the inputs like which major and degree you are
+        // looking at. it will take this from the UI later. it prints all the busy
+        // machines now. it will pass them to UI later.
+        //------------------------------------------------------------------------------
         static void Main(string[] args) {
             Scheduler scheduler = new Scheduler();
             scheduler.MakeStartingPoint("nothing yet");
